@@ -1,0 +1,16 @@
+{
+  "layout": "testcases/pawn_promotion/level1.txt",
+  "time_controls": {
+    "player": {
+      "seconds": 180,
+      "increment": 2
+    },
+    "cpu": {
+      "seconds": 180,
+      "increment": 2
+    }
+  },
+  "player_colour": "white",
+  "piece_movement_speed": 6.0,
+  "max_movement_time": 1
+}
