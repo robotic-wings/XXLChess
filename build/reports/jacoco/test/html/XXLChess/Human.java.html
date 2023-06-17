@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Human.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">XXLChess</a> &gt; <a href="index.source.html" class="el_package">XXLChess</a> &gt; <span class="el_source">Human.java</span></div><h1>Human.java</h1><pre class="source lang-java linenums">package XXLChess;
+
+import XXLChess.Piece.Color;
+
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * This class represents a human player in the chess game.
+ * It extends the abstract PlayerAgent class and provides methods for selecting a piece and getting its available moves.
+ */
+public class Human extends PlayerAgent {
+    private Tile selection;  // The tile currently selected by the player
+
+    /**
+     * Constructor for the Human class.
+     *
+     * @param color         The color of the player's pieces.
+     * @param remainingTime The initial remaining time for the player's turns.
+     * @param timeIncrement The time increment after each move.
+     */
+    public Human(Color color, int remainingTime, int timeIncrement) {
+<span class="fc" id="L23">        super(color, remainingTime, timeIncrement);</span>
+<span class="fc" id="L24">    }</span>
+
+    /**
+     * Get the currently selected tile.
+     *
+     * @return The currently selected tile, or null if no tile is selected.
+     */
+    public Tile getSelection() {
+<span class="fc" id="L32">        return selection;</span>
+    }
+
+    /**
+     * Select a tile.
+     *
+     * @param source The tile to be selected.
+     */
+    public void select(Tile source) {
+<span class="fc" id="L41">        this.selection = source;</span>
+<span class="fc" id="L42">    }</span>
+
+    /**
+     * Check if a move is pending.
+     *
+     * @return true if no tile is currently selected, false otherwise.
+     */
+    public boolean isPending() {
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        return this.selection == null;</span>
+    }
+
+    /**
+     * Clear the current tile selection.
+     */
+    public void clearSelection() {
+<span class="fc" id="L57">        this.selection = null;</span>
+<span class="fc" id="L58">    }</span>
+
+    /**
+     * Get the all target tiles for the currently selected piece, without considering the safety of the king.
+     *
+     * @return A set of tiles that the selected piece can move to, or null if no piece is selected.
+     */
+    public Set&lt;Tile&gt; getAllTargetTiles() {
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (selection == null) return null;</span>
+<span class="nc" id="L67">        Piece piece = selection.getCurrentPiece();</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (piece == null) return null;</span>
+<span class="nc" id="L69">        return piece.getPossibleTargets();</span>
+    }
+
+    /**
+     * Get the all target movements for the currently selected piece, without considering the safety of the king.
+     *
+     * @return A set of movements that the selected piece can do, or null if no piece is selected.
+     */
+    public Set&lt;Movement&gt; getAllMovements() {
+<span class="nc" id="L78">        Set&lt;Tile&gt; tiles = getAllTargetTiles();</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (tiles == null) return null;</span>
+<span class="nc" id="L80">        Set&lt;Movement&gt; allMoves = new HashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        for (Tile tile : tiles) {</span>
+<span class="nc" id="L82">            Piece p = selection.getCurrentPiece();</span>
+<span class="nc" id="L83">            allMoves.add(new Movement(p, tile));</span>
+<span class="nc" id="L84">        }</span>
+<span class="nc" id="L85">        return allMoves;</span>
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

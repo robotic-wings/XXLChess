@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnimationVehicle.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">XXLChess</a> &gt; <a href="index.source.html" class="el_package">XXLChess</a> &gt; <span class="el_source">AnimationVehicle.java</span></div><h1>AnimationVehicle.java</h1><pre class="source lang-java linenums">package XXLChess;
+
+import processing.core.PImage;
+
+/**
+ * This class represents the movement animation of a chess piece.
+ * It calculates and updates the position of the piece frame by frame, creating a moving effect.
+ */
+public class AnimationVehicle implements Tickable {
+    private final double k1;
+    private final double k2;  // The parameters in the linear equation for piece movement.
+    private final double originalLeft;
+    private final double originalTop;  // The original position of the piece.
+    private double left, top;  // The current position of the piece.
+    private final Piece piece;  // The piece being moved.
+    private final double horizontalDiff;  // The horizontal distance the piece needs to move.
+    private final double verticalDiff;  // The vertical distance the piece needs to move.
+    private PImage afterimage;  // The image of the piece at the target tile (if any).
+    private final double targetLeft;
+    private final double targetTop;  // The target position of the piece.
+
+    /**
+     * Constructor for the AnimationVehicle class.
+     *
+     * @param pieceMovementSpeed The speed at which the piece should move.
+     * @param maxMovementTime    The maximum time the movement should take.
+     * @param m                  The move that the piece is making.
+     */
+<span class="fc" id="L29">    public AnimationVehicle(int pieceMovementSpeed, int maxMovementTime, Movement m) {</span>
+<span class="fc" id="L30">        piece = m.getSourcePiece();</span>
+<span class="fc" id="L31">        this.originalLeft = m.getSourceLeft();</span>
+<span class="fc" id="L32">        this.originalTop = m.getSourceTop();</span>
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">        if (m.getTargetPiece() != null) {</span>
+            // checking a enemy's piece
+<span class="nc" id="L35">            afterimage = m.getTargetPiece().getImage();</span>
+        }
+<span class="fc" id="L37">        this.targetLeft = m.getTargetLeft();</span>
+<span class="fc" id="L38">        this.targetTop = m.getTargetTop();</span>
+<span class="fc" id="L39">        horizontalDiff = targetLeft - originalLeft;</span>
+<span class="fc" id="L40">        verticalDiff = targetTop - originalTop;</span>
+<span class="fc" id="L41">        int maxDisplacement = pieceMovementSpeed * maxMovementTime * App.FPS;</span>
+<span class="fc" id="L42">        double distance = Math.sqrt(Math.pow(horizontalDiff, 2) + Math.pow(verticalDiff, 2));</span>
+        double realSpeed;
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        if (distance &gt; maxDisplacement) {</span>
+<span class="nc" id="L45">            realSpeed = distance / maxMovementTime / App.FPS;</span>
+        } else {
+<span class="fc" id="L47">            realSpeed = pieceMovementSpeed;</span>
+        }
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (horizontalDiff != 0) {</span>
+<span class="fc" id="L50">            double tangent = verticalDiff / horizontalDiff;</span>
+<span class="fc" id="L51">            k1 = (horizontalDiff / Math.abs(horizontalDiff)) * Math.sqrt(Math.pow(realSpeed, 2) / (1 + Math.pow(tangent, 2)));</span>
+<span class="fc" id="L52">            k2 = tangent * k1;</span>
+<span class="fc" id="L53">        } else {</span>
+<span class="fc" id="L54">            k1 = 0;</span>
+<span class="fc" id="L55">            k2 = (verticalDiff / Math.abs(verticalDiff)) * realSpeed;</span>
+        }
+<span class="fc" id="L57">    }</span>
+
+    /**
+     * Get the top margin of the target position.
+     *
+     * @return The top margin of the target position.
+     */
+    public double getTargetTop() {
+<span class="nc" id="L65">        return targetTop;</span>
+    }
+
+    /**
+     * Get the left margin of the target position.
+     *
+     * @return The left margin of the target position.
+     */
+    public double getTargetLeft() {
+<span class="nc" id="L74">        return targetLeft;</span>
+    }
+
+    /**
+     * Get the details of the movement, including the parameters in the linear equation and the current position.
+     *
+     * @return A string containing the details of the movement.
+     */
+    public String getDetails() {
+<span class="nc" id="L83">        return &quot;k1: &quot; + k1 + &quot; k2: &quot; + k2 + &quot; x: &quot; + left + &quot; y: &quot; + top + &quot; diffX: &quot; + horizontalDiff + &quot; diffY: &quot; + verticalDiff;</span>
+    }
+
+    /**
+     * Get the image of the piece at the target tile.
+     *
+     * @return The image of the piece at the target tile, or null if the target tile is empty.
+     */
+    public PImage getAfterimage() {
+<span class="nc" id="L92">        return afterimage;</span>
+    }
+
+    /**
+     * Update the position of the piece.
+     * If the movement has ended, this method throws an IllegalStateException.
+     */
+    public void tick() {
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        if (isEnded()) throw new IllegalStateException();</span>
+<span class="fc" id="L101">        left += k1;</span>
+<span class="fc" id="L102">        top += k2;</span>
+<span class="fc" id="L103">    }</span>
+
+    /**
+     * Get the current left margin of the piece.
+     *
+     * @return The current left margin of the piece.
+     */
+    public double getLeft() {
+<span class="nc" id="L111">        return originalLeft + left;</span>
+    }
+
+    /**
+     * Get the current top margin of the piece.
+     *
+     * @return The current top margin of the piece.
+     */
+    public double getTop() {
+<span class="nc" id="L120">        return originalTop + top;</span>
+    }
+
+    /**
+     * Check if the movement has ended.
+     *
+     * @return True if the movement has ended, false otherwise.
+     */
+    public boolean isEnded() {
+<span class="fc bfc" id="L129" title="All 4 branches covered.">        return (Math.abs(left) &gt;= Math.abs(horizontalDiff)) &amp;&amp; (Math.abs(top) &gt;= Math.abs(verticalDiff));</span>
+    }
+
+    /**
+     * Get the piece that is being moved.
+     *
+     * @return The piece that is being moved.
+     */
+    public Piece getMovingPiece() {
+<span class="nc" id="L138">        return piece;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

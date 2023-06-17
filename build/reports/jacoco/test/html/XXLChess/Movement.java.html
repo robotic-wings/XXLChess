@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Movement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">XXLChess</a> &gt; <a href="index.source.html" class="el_package">XXLChess</a> &gt; <span class="el_source">Movement.java</span></div><h1>Movement.java</h1><pre class="source lang-java linenums">package XXLChess;
+
+/**
+ * This class represents a move in the chess game.
+ * It encapsulates the source piece and the target tile.
+ */
+public class Movement {
+    private final Piece source;  // The piece that is being moved.
+    private final Tile sourceTile;  // The tile where the source piece is located.
+    private final Tile target;  // The target tile to which the source piece is moving.
+
+    /**
+     * Constructor for the Movement class.
+     *
+     * @param source The piece that is being moved.
+     * @param target The target tile to which the source piece is moving.
+     */
+<span class="fc" id="L18">    public Movement(Piece source, Tile target) {</span>
+<span class="fc" id="L19">        this.source = source;</span>
+<span class="fc" id="L20">        this.sourceTile = this.source.getCurrentTile();</span>
+<span class="fc" id="L21">        this.target = target;</span>
+<span class="fc" id="L22">    }</span>
+
+    /**
+     * Get the source piece of the move.
+     *
+     * @return The source piece of the move.
+     */
+    public Piece getSourcePiece() {
+<span class="fc" id="L30">        return this.source;</span>
+    }
+
+    /**
+     * Get the source tile of the move.
+     *
+     * @return The source tile of the move.
+     */
+    public Tile getSourceTile() {
+<span class="fc" id="L39">        return sourceTile;</span>
+    }
+
+    /**
+     * Get the piece located at the target tile.
+     *
+     * @return The piece at the target tile, or null if the target tile is empty.
+     */
+    public Piece getTargetPiece() {
+<span class="fc" id="L48">        return this.target.getCurrentPiece();</span>
+    }
+
+    /**
+     * Get the target tile of the move.
+     *
+     * @return The target tile of the move.
+     */
+    public Tile getTargetTile() {
+<span class="fc" id="L57">        return this.target;</span>
+    }
+
+    /**
+     * Get the x-coordinate of the source tile.
+     *
+     * @return The x-coordinate of the source tile.
+     */
+    public int getSourceX() {
+<span class="fc" id="L66">        return this.source.getX();</span>
+    }
+
+    /**
+     * Get the y-coordinate of the source tile.
+     *
+     * @return The y-coordinate of the source tile.
+     */
+    public int getSourceY() {
+<span class="fc" id="L75">        return this.source.getY();</span>
+    }
+
+    /**
+     * Get the x-coordinate of the target tile.
+     *
+     * @return The x-coordinate of the target tile.
+     */
+    public int getTargetX() {
+<span class="fc" id="L84">        return this.target.getX();</span>
+    }
+
+    /**
+     * Get the y-coordinate of the target tile.
+     *
+     * @return The y-coordinate of the target tile.
+     */
+    public int getTargetY() {
+<span class="fc" id="L93">        return this.target.getY();</span>
+    }
+
+    /**
+     * Get the left position of the target tile.
+     *
+     * @return The left position of the target tile.
+     */
+    public int getTargetLeft() {
+<span class="fc" id="L102">        return target.getLeft();</span>
+    }
+
+    /**
+     * Get the top position of the target tile.
+     *
+     * @return The top position of the target tile.
+     */
+    public int getTargetTop() {
+<span class="fc" id="L111">        return target.getTop();</span>
+    }
+
+    /**
+     * Get the left position of the source tile.
+     *
+     * @return The left position of the source tile.
+     */
+    public int getSourceLeft() {
+<span class="fc" id="L120">        return source.getLeft();</span>
+    }
+
+    /**
+     * Get the top position of the source tile.
+     *
+     * @return The top position of the source tile.
+     */
+    public int getSourceTop() {
+<span class="fc" id="L129">        return source.getTop();</span>
+    }
+
+    public Piece perform() {
+<span class="fc" id="L133">        Piece checkedPiece = target.getCurrentPiece();</span>
+<span class="fc" id="L134">        getSourceTile().setCurrentPiece(null);</span>
+<span class="fc" id="L135">        target.setCurrentPiece(source);</span>
+<span class="fc" id="L136">        source.setCurrentTile(target);</span>
+<span class="fc" id="L137">        source.setHasMovedBefore(true);</span>
+<span class="fc" id="L138">        return checkedPiece;</span>
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">        if (this == obj) {</span>
+<span class="nc" id="L144">            return true;</span>
+        }
+
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        if (!(obj instanceof Movement)) {</span>
+<span class="nc" id="L148">            return false;</span>
+        }
+<span class="fc" id="L150">        Movement m = (Movement) obj;</span>
+<span class="pc bpc" id="L151" title="1 of 6 branches missed.">        return this.source == m.source</span>
+        &amp;&amp; this.target == m.target
+        &amp;&amp; this.sourceTile == m.sourceTile;
+    }
+}
+
+/**
+ * if (p instanceof King) {
+                allMoves.addAll(((King) p).getPotentialCastlingMovements(game));
+            }
+ */
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>

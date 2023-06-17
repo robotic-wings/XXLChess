@@ -1,0 +1,756 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Game.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">XXLChess</a> &gt; <a href="index.source.html" class="el_package">XXLChess</a> &gt; <span class="el_source">Game.java</span></div><h1>Game.java</h1><pre class="source lang-java linenums">package XXLChess;
+
+import XXLChess.GameReport.EndReason;
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * This class represents a game of chess. It includes the players, the board, the current game state,
+ * and any animations or warnings that need to be displayed. It also implements the Tickable interface
+ * to allow the game state to be updated regularly.
+ */
+public class Game implements Tickable {
+
+  // Each counterpart's agents
+  private final Human humanAgent;
+  private final Bot botAgent;
+
+  // Current player
+  private PlayerAgent currentPlayer;
+
+  // In-check incident
+  private InCheckIncident inCheck;
+
+  // Animation management
+  private AnimationVehicle animation;
+
+  // Animation management (specifically for the rook)
+  private AnimationVehicle rookAnimation;
+
+  // King protection warning
+  private KingProtectionWarning warning;
+
+  // Game report (if the game ends)
+  private GameReport report;
+
+  // Expired frames
+<span class="fc" id="L37">  private final int expiredFramesCount = 0;</span>
+
+  // Chess board
+  private final Board board;
+
+  // Piece movement speed
+  private final int pieceMovementSpeed;
+
+  // Max movement time
+  private final int maxMovementTime;
+
+  /**
+   * Constructs a Game with the provided parameters.
+   *
+   * @param isPlayerWhite       determines if the player is using the white pieces
+   * @param playerSeconds       player's time in seconds
+   * @param cpuSeconds          cpu's time in seconds
+   * @param playerTimeIncrement player's time increment per move
+   * @param cpuTimeIncrement    cpu's time increment per move
+   * @param pieceMovementSpeed  speed of piece movement
+   * @param maxMovementTime     maximum time for a movement
+   */
+  public Game(
+    boolean isPlayerWhite,
+    int playerSeconds,
+    int cpuSeconds,
+    int playerTimeIncrement,
+    int cpuTimeIncrement,
+    int pieceMovementSpeed,
+    int maxMovementTime
+<span class="fc" id="L67">  ) {</span>
+    // Load the human &amp; bot agent
+    // The “player_colour” property denotes the colour of the pieces of player 1
+    // (the human player). It should either have the value “white” or “black”.
+<span class="fc bfc" id="L71" title="All 2 branches covered.">    if (isPlayerWhite) {</span>
+<span class="fc" id="L72">      humanAgent =</span>
+        new Human(Piece.Color.WHITE, playerSeconds, playerTimeIncrement);
+<span class="fc" id="L74">      botAgent = new Bot(Piece.Color.BLACK, cpuSeconds, cpuTimeIncrement);</span>
+<span class="fc" id="L75">      this.board = new Board(humanAgent, botAgent);</span>
+    } else {
+<span class="fc" id="L77">      humanAgent =</span>
+        new Human(Piece.Color.BLACK, playerSeconds, playerTimeIncrement);
+<span class="fc" id="L79">      botAgent = new Bot(Piece.Color.WHITE, cpuSeconds, cpuTimeIncrement);</span>
+<span class="fc" id="L80">      this.board = new Board(botAgent, humanAgent);</span>
+    }
+<span class="fc" id="L82">    humanAgent.setOpponent(botAgent);</span>
+<span class="fc" id="L83">    botAgent.setOpponent(humanAgent);</span>
+    // Whoever is white has the first move, as in regular chess
+<span class="fc" id="L85">    currentPlayer = board.getAgentByColor(Piece.Color.WHITE);</span>
+<span class="fc" id="L86">    this.pieceMovementSpeed = pieceMovementSpeed;</span>
+<span class="fc" id="L87">    this.maxMovementTime = maxMovementTime;</span>
+<span class="fc" id="L88">  }</span>
+
+  /**
+   * Returns the current in-check incident.
+   *
+   * @return the current in-check incident.
+   */
+  public InCheckIncident getInCheck() {
+<span class="fc" id="L96">    return inCheck;</span>
+  }
+
+  /**
+   * Sets the current in-check incident.
+   *
+   * @param inCheck the in-check incident to be set.
+   */
+  public void setInCheck(InCheckIncident inCheck) {
+<span class="fc" id="L105">    this.inCheck = inCheck;</span>
+<span class="fc" id="L106">  }</span>
+
+  /**
+   * Returns the current rook animation.
+   *
+   * @return the current rook animation.
+   */
+  public AnimationVehicle getRookAnimation() {
+<span class="nc" id="L114">    return rookAnimation;</span>
+  }
+
+  /**
+   * Sets the current rook animation.
+   *
+   * @param rookAnimation the current rook animation to be set.
+   */
+  public void setRookAnimation(AnimationVehicle rookAnimation) {
+<span class="fc" id="L123">    this.rookAnimation = rookAnimation;</span>
+<span class="fc" id="L124">  }</span>
+
+  /**
+   * Returns the current warning.
+   *
+   * @return the current warning.
+   */
+  public KingProtectionWarning getWarning() {
+<span class="nc" id="L132">    return warning;</span>
+  }
+
+  /**
+   * Sets the current warning.
+   *
+   * @param warning the warning to be set.
+   */
+  public void setWarning(KingProtectionWarning warning) {
+<span class="fc" id="L141">    this.warning = warning;</span>
+<span class="fc" id="L142">  }</span>
+
+  /**
+   * Returns the current animation.
+   *
+   * @return the current animation.
+   */
+  public AnimationVehicle getAnimation() {
+<span class="nc" id="L150">    return animation;</span>
+  }
+
+  /**
+   * Sets the current animation.
+   *
+   * @param a the animation to set
+   */
+  public void setAnimation(AnimationVehicle a) {
+<span class="fc" id="L159">    this.animation = a;</span>
+<span class="fc" id="L160">  }</span>
+
+  /**
+   * Returns the game report.
+   *
+   * @return the game report.
+   */
+  public GameReport getReport() {
+<span class="fc" id="L168">    return report;</span>
+  }
+
+  /**
+   * Sets the game report.
+   *
+   * @param report the game report to be set.
+   */
+  public void setReport(GameReport report) {
+<span class="fc" id="L177">    this.report = report;</span>
+<span class="fc" id="L178">  }</span>
+
+
+  /**
+   * Returns the game board.
+   *
+   * @return the game board.
+   */
+  public Board getBoard() {
+<span class="fc" id="L187">    return board;</span>
+  }
+
+  /**
+   * Returns a specific tile from the board.
+   *
+   * @param x the x-coordinate of the tile.
+   * @param y the y-coordinate of the tile.
+   * @return the tile at the specified coordinates.
+   */
+  public Tile getTile(int x, int y) {
+<span class="fc" id="L198">    return board.getTile(x, y);</span>
+  }
+
+  /**
+   * Returns the current player.
+   *
+   * @return the current player.
+   */
+  public PlayerAgent getCurrentPlayer() {
+<span class="nc" id="L207">    return currentPlayer;</span>
+  }
+
+  /**
+   * Sets the current player.
+   *
+   * @param currentPlayer the player to be set as the current player.
+   */
+  public void setCurrentPlayer(PlayerAgent currentPlayer) {
+<span class="nc" id="L216">    this.currentPlayer = currentPlayer;</span>
+<span class="nc" id="L217">  }</span>
+
+  /**
+   * Returns the Bot agent.
+   *
+   * @return the Bot agent.
+   */
+  public Bot getBotAgent() {
+<span class="fc" id="L225">    return botAgent;</span>
+  }
+
+  /**
+   * Returns the Human agent.
+   *
+   * @return the Human agent.
+   */
+  public Human getHumanAgent() {
+<span class="fc" id="L234">    return humanAgent;</span>
+  }
+
+  /**
+   * Returns the count of expired frames.
+   *
+   * @return the count of expired frames.
+   */
+  public int getExpiredFramesCount() {
+<span class="nc" id="L243">    return expiredFramesCount;</span>
+  }
+
+  /**
+   * The tick method is called every frame and handles the game logic. This includes checking if the game has ended,
+   * checking for in-check incidents, rendering warnings and animations, and handling player and computer turns.
+   */
+  public void tick() {
+    // Check if the game has ended
+<span class="pc bpc" id="L252" title="1 of 2 branches missed.">    if (isEnded()) {</span>
+      // If the game has ended and a report hasn't been created yet, create one
+<span class="nc bnc" id="L254" title="All 2 branches missed.">      if (report == null) {</span>
+<span class="nc" id="L255">        report =</span>
+          new GameReport(
+            this,
+<span class="nc bnc" id="L258" title="All 2 branches missed.">            humanAgent.isEnded()</span>
+              ? GameReport.EndReason.PLAYER_TIMEOUT
+              : GameReport.EndReason.COMPUTER_TIMEOUT
+          );
+      }
+    }
+
+<span class="fc" id="L265">    InCheckIncident inc = detectInCheck(currentPlayer);</span>
+<span class="fc" id="L266">    setInCheck(inc);</span>
+
+    // Handle game logic based on the current game status
+<span class="pc bpc" id="L269" title="2 of 6 branches missed.">    switch (getGameStatus()) {</span>
+      case ENDED:
+        // Nothing to do if the game has ended
+<span class="nc" id="L272">        break;</span>
+      case RENDERING_WARNING:
+        // Handle warning rendering
+<span class="fc bfc" id="L275" title="All 2 branches covered.">        if (warning.isEnded()) {</span>
+<span class="fc" id="L276">          warning = null;</span>
+        } else {
+<span class="fc" id="L278">          warning.tick();</span>
+        }
+<span class="fc" id="L280">        break;</span>
+      case RENDERING_ANIMATION:
+        // Handle animation rendering
+<span class="fc bfc" id="L283" title="All 4 branches covered.">        if (animation == null || animation.isEnded()) {</span>
+<span class="fc" id="L284">          animation = null;</span>
+        } else {
+<span class="fc" id="L286">          animation.tick();</span>
+        }
+<span class="fc bfc" id="L288" title="All 4 branches covered.">        if (rookAnimation == null || rookAnimation.isEnded()) {</span>
+<span class="fc" id="L289">          rookAnimation = null;</span>
+        } else {
+<span class="fc" id="L291">          rookAnimation.tick();</span>
+        }
+<span class="fc" id="L293">        break;</span>
+      case PLAYER_TURN:
+        // Handle player's turn
+<span class="fc" id="L296">        checkmateInspection();</span>
+<span class="pc bpc" id="L297" title="1 of 2 branches missed.">        if (getGameStatus() == GameStatus.ENDED) {</span>
+<span class="nc" id="L298">          return;</span>
+        }
+<span class="fc" id="L300">        humanAgent.tick();</span>
+<span class="fc" id="L301">        break;</span>
+      case COMPUTER_TURN:
+        // Handle computer's turn
+        Movement m;
+<span class="fc bfc" id="L305" title="All 2 branches covered.">        if (inCheck != null) {</span>
+          // If the computer is in check, inspect for checkmate
+<span class="fc" id="L307">          Set&lt;Movement&gt; solution = checkmateInspection();</span>
+<span class="pc bpc" id="L308" title="1 of 2 branches missed.">          if (getGameStatus() == GameStatus.ENDED) {</span>
+<span class="fc" id="L309">            return;</span>
+          }
+<span class="nc" id="L311">          m = solution.iterator().next();</span>
+<span class="nc" id="L312">        } else {</span>
+          // If the computer is not in check, make a decision
+<span class="fc" id="L314">          m = botAgent.makeDecision(this);</span>
+        }
+<span class="pc bpc" id="L316" title="1 of 2 branches missed.">        if (m != null) {</span>
+          try {
+<span class="fc" id="L318">            movePiece(m);</span>
+<span class="nc" id="L319">          } catch (RuleViolationException err) {</span>
+<span class="nc" id="L320">            System.out.println(</span>
+              &quot;Error: Oh no.. A computer can also break rules! THE COMPUTER IS UPRISING!!&quot;
+            );
+<span class="pc" id="L323">          }</span>
+        } else {
+<span class="nc" id="L325">          report = new GameReport(this, EndReason.PLAYER_RESIGNED);</span>
+        }
+<span class="fc" id="L327">        botAgent.tick();</span>
+        break;
+    }
+<span class="fc" id="L330">  }</span>
+
+  /**
+   * Inspects the game for a checkmate situation. If the current player is in check and there are no legal moves,
+   * a GameReport is created with a checkmate end reason.
+   *
+   * @return a Set of legal movements if the current player is in check, or null if not.
+   */
+  public Set&lt;Movement&gt; checkmateInspection() {
+<span class="fc" id="L339">    Set&lt;Movement&gt; solution = new HashSet&lt;&gt;();</span>
+<span class="pc bpc" id="L340" title="1 of 2 branches missed.">    if (inCheck != null) {</span>
+<span class="fc" id="L341">      solution = solveIncident(inCheck);</span>
+      // If there are no legal moves, the player is checkmated
+<span class="fc bfc" id="L343" title="All 2 branches covered.">      if (solution.size() == 0) {</span>
+<span class="fc" id="L344">        setReport(</span>
+          new GameReport(
+            this,
+<span class="pc bpc" id="L347" title="1 of 2 branches missed.">            inCheck.getThreatenedKing().getColor() == humanAgent.getColor()</span>
+              ? EndReason.PLAYER_CHECKMATED
+              : EndReason.COMPUTER_CHECKMATED
+          )
+        );
+      }
+<span class="fc" id="L353">      return solution;</span>
+    }
+<span class="nc" id="L355">    return null;</span>
+  }
+
+  /**
+   * Returns the current game status. The game status can be one of the following: rendering an animation,
+   * rendering a warning, the game has ended, it's the human player's turn, or it's the bot's turn.
+   *
+   * @return the current game status.
+   */
+  public GameStatus getGameStatus() {
+<span class="fc bfc" id="L365" title="All 4 branches covered.">    if (animation != null || rookAnimation != null) {</span>
+      // If there's an active animation, the game is rendering the animation
+<span class="fc" id="L367">      return GameStatus.RENDERING_ANIMATION;</span>
+<span class="fc bfc" id="L368" title="All 2 branches covered.">    } else if (warning != null) {</span>
+      // If there's an active warning, the game is rendering the warning
+<span class="fc" id="L370">      return GameStatus.RENDERING_WARNING;</span>
+<span class="fc bfc" id="L371" title="All 2 branches covered.">    } else if (report != null) {</span>
+      // If there's a game report, the game has ended
+<span class="fc" id="L373">      return GameStatus.ENDED;</span>
+<span class="fc bfc" id="L374" title="All 2 branches covered.">    } else if (currentPlayer == humanAgent) {</span>
+      // If the current player is the human agent, it's the human player's turn
+<span class="fc" id="L376">      return GameStatus.PLAYER_TURN;</span>
+<span class="pc bpc" id="L377" title="1 of 2 branches missed.">    } else if (currentPlayer == botAgent) {</span>
+      // If the current player is the bot agent, it's the bot's turn
+<span class="fc" id="L379">      return GameStatus.COMPUTER_TURN;</span>
+    }
+<span class="nc" id="L381">    return null;</span>
+  }
+
+  /**
+   * Executes a movement for the current player. Throws an exception if the move would put the player's king in check.
+   *
+   * @param m the movement to execute
+   * @throws RuleViolationException if the move is illegal
+   */
+  public void movePiece(Movement m) throws RuleViolationException {
+    // Predict if the king will be in check after the move
+<span class="fc" id="L392">    InCheckIncident inc = predictInCheck(</span>
+<span class="fc" id="L393">      board.getPieceOwner(m.getSourcePiece()),</span>
+      m
+    );
+<span class="fc" id="L396">    Piece piece = m.getSourcePiece();</span>
+<span class="fc" id="L397">    Tile target = m.getTargetTile();</span>
+<span class="fc" id="L398">    PlayerAgent mover = board.getAgentByColor(m.getSourcePiece().getColor());</span>
+
+    // If the king would be in check after the move, throw an exception
+<span class="pc bpc" id="L401" title="1 of 2 branches missed.">    if (inc != null) {</span>
+<span class="nc" id="L402">      throw new KingInDangerException(mover);</span>
+    }
+
+<span class="fc" id="L405">    AnimationVehicle animation = new AnimationVehicle(</span>
+      pieceMovementSpeed,
+      maxMovementTime,
+      m
+    );
+<span class="fc" id="L410">    Piece capturedPiece = target.getCurrentPiece();</span>
+
+    // If the target tile is occupied by a piece
+<span class="pc bpc" id="L413" title="1 of 2 branches missed.">    if (capturedPiece != null) {</span>
+      // If the piece is the opponent's king, throw an exception
+<span class="nc" id="L415">      if (</span>
+<span class="nc bnc" id="L416" title="All 2 branches missed.">        capturedPiece == mover.getOpponent().getKing()</span>
+<span class="nc" id="L417">      ) throw new KingDignityException(mover);</span>
+
+      // Remove the opponent's piece from the game
+<span class="nc" id="L420">      board.getPieceOwner(capturedPiece).getPieces().remove(capturedPiece);</span>
+    }
+
+<span class="fc" id="L423">    Movement castlingMove = getCastlingMovement(m);</span>
+
+<span class="fc" id="L425">    mover.setLastMove(m);</span>
+<span class="fc" id="L426">    setAnimation(animation);</span>
+<span class="fc" id="L427">    m.perform();</span>
+
+<span class="pc bpc" id="L429" title="1 of 4 branches missed.">    boolean pawnPromotion =</span>
+<span class="fc bfc" id="L430" title="All 2 branches covered.">      piece instanceof Pawn &amp;&amp; target != null &amp;&amp; target.getY() == 7;</span>
+    // If a pawn has reached the opponent's side of the board, promote it to a queen
+<span class="fc bfc" id="L432" title="All 2 branches covered.">    if (pawnPromotion) {</span>
+<span class="fc" id="L433">      Queen queen = new Queen(piece.getColor());</span>
+<span class="fc" id="L434">      target.setCurrentPiece(queen);</span>
+<span class="fc" id="L435">      queen.setCurrentTile(target);</span>
+<span class="fc" id="L436">      mover.getPieces().remove(piece);</span>
+<span class="fc" id="L437">      mover.getPieces().add(queen);</span>
+    }
+
+<span class="fc" id="L440">    refreshAvailableMoves(this.board);</span>
+<span class="fc" id="L441">    mover.increaseRemainingTime();</span>
+
+<span class="fc bfc" id="L443" title="All 2 branches covered.">    if (castlingMove != null) {</span>
+<span class="fc" id="L444">      AnimationVehicle castlingAnimationVehicle = new AnimationVehicle(</span>
+        pieceMovementSpeed,
+        maxMovementTime,
+        castlingMove
+      );
+<span class="fc" id="L449">      setRookAnimation(castlingAnimationVehicle);</span>
+<span class="fc" id="L450">      mover.getPieces().remove(castlingMove.perform());</span>
+    }
+
+    // After the move, it is the opponent's turn
+<span class="fc" id="L454">    currentPlayer = mover.getOpponent();</span>
+
+    // Detect if the current player is in check
+<span class="fc" id="L457">    InCheckIncident incident = detectInCheck(currentPlayer);</span>
+<span class="fc" id="L458">    setInCheck(incident);</span>
+
+    // Play sound
+<span class="fc bfc" id="L461" title="All 2 branches covered.">    if (incident != null) {</span>
+<span class="fc" id="L462">      SoundPlayer.playSound(&quot;move-check.wav&quot;);</span>
+<span class="pc bpc" id="L463" title="1 of 2 branches missed.">    } else if (capturedPiece != null) {</span>
+      // Play capture sound
+<span class="nc" id="L465">      SoundPlayer.playSound(&quot;capture.wav&quot;);</span>
+<span class="fc bfc" id="L466" title="All 2 branches covered.">    } else if (castlingMove != null) {</span>
+<span class="fc" id="L467">      SoundPlayer.playSound(&quot;castle.wav&quot;);</span>
+<span class="fc bfc" id="L468" title="All 2 branches covered.">    } else if (pawnPromotion) {</span>
+<span class="fc" id="L469">      SoundPlayer.playSound(&quot;promote.wav&quot;);</span>
+    } else {
+<span class="fc" id="L471">      SoundPlayer.playSound(&quot;move-self.wav&quot;);</span>
+    }
+<span class="fc" id="L473">  }</span>
+
+  /**
+   * Refreshes the set of available moves for all pieces on the board.
+   *
+   * @param board the game board to refresh
+   */
+  public void refreshAvailableMoves(Board board) {
+<span class="fc bfc" id="L481" title="All 2 branches covered.">    for (int i = 0; i &lt; Board.BOARD_WIDTH; i++) {</span>
+<span class="fc bfc" id="L482" title="All 2 branches covered.">      for (int j = 0; j &lt; Board.BOARD_WIDTH; j++) {</span>
+<span class="fc" id="L483">        Piece piece = board.getTile(i, j).getCurrentPiece();</span>
+<span class="fc bfc" id="L484" title="All 2 branches covered.">        if (piece != null) {</span>
+<span class="fc" id="L485">          piece.updatePossibleTargets(board);</span>
+        }
+      }
+    }
+<span class="fc" id="L489">  }</span>
+
+  /**
+   * Returns a set of tiles that would be dangerous for a given piece to move to.
+   *
+   * @param p the piece to check
+   * @return a set of dangerous tiles
+   */
+  public Set&lt;Tile&gt; getDangerTiles(Piece p) {
+<span class="fc" id="L498">    Set&lt;Tile&gt; moves = p.getPossibleTargets();</span>
+<span class="fc" id="L499">    Set&lt;Tile&gt; illegal = new HashSet&lt;Tile&gt;();</span>
+<span class="fc bfc" id="L500" title="All 2 branches covered.">    for (Tile move : moves) {</span>
+      // If the piece would be threatened by an opponent's piece on the tile, add it to the set
+<span class="fc" id="L502">      if (</span>
+<span class="fc" id="L503">        predictThreats(</span>
+<span class="fc" id="L504">          board.getPieceOwner(p).getOpponent(),</span>
+          new Movement(p, move),
+          p
+        )
+<span class="pc bpc" id="L508" title="1 of 2 branches missed.">          .size() &gt;</span>
+        0
+      ) {
+<span class="nc" id="L511">        illegal.add(move);</span>
+      }
+<span class="fc" id="L513">    }</span>
+<span class="fc" id="L514">    return illegal;</span>
+  }
+
+  /**
+   * Predicts the pieces that would threaten a piece after a given move.
+   *
+   * @param attacker the player making the move
+   * @param move     the move to consider
+   * @param subject  the piece to check for threats against
+   * @return a set of pieces that would threaten the subject piece after the move
+   */
+  public Set&lt;Piece&gt; predictThreats(
+    PlayerAgent attacker,
+    Movement move,
+    Piece subject
+  ) {
+    // Start a simulation of the move
+<span class="fc" id="L531">    int sourceX = move.getSourceX();</span>
+<span class="fc" id="L532">    int sourceY = move.getSourceY();</span>
+<span class="fc" id="L533">    int targetX = move.getTargetX();</span>
+<span class="fc" id="L534">    int targetY = move.getTargetY();</span>
+<span class="fc" id="L535">    int subjectX = subject.getX();</span>
+<span class="fc" id="L536">    int subjectY = subject.getY();</span>
+
+    // Create a clone of the board to simulate the move on
+<span class="fc" id="L539">    Board clonedBoard = board.clone();</span>
+<span class="fc" id="L540">    Tile simSourceTile = clonedBoard.getTile(sourceX, sourceY);</span>
+<span class="fc" id="L541">    Piece simSourcePiece = simSourceTile.getCurrentPiece();</span>
+<span class="fc" id="L542">    Tile simTargetTile = clonedBoard.getTile(targetX, targetY);</span>
+<span class="fc" id="L543">    Piece simSubject = clonedBoard.getPiece(subjectX, subjectY);</span>
+
+    // Execute the move in the simulation
+<span class="fc" id="L546">    new Movement(simSourcePiece, simTargetTile).perform();</span>
+
+<span class="fc" id="L548">    refreshAvailableMoves(clonedBoard);</span>
+
+    // Get the pieces that could attack the subject piece after the move
+<span class="fc" id="L551">    Set&lt;Piece&gt; threats = detectThreats(clonedBoard, simSubject);</span>
+
+    // Return the threats
+<span class="fc" id="L554">    return threats;</span>
+  }
+
+  /**
+   * Detects the pieces that could threaten a piece on a given board.
+   *
+   * @param board   the board to check
+   * @param subject the piece to check for threats against
+   * @return a set of pieces that could threaten the subject piece
+   */
+  public Set&lt;Piece&gt; detectThreats(Board board, Piece subject) {
+<span class="fc" id="L565">    int attackeeX = subject.getX();</span>
+<span class="fc" id="L566">    int attackeeY = subject.getY();</span>
+<span class="fc" id="L567">    Set&lt;Piece&gt; attackerPieces = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L568">    Piece attackee = board.getPiece(attackeeX, attackeeY);</span>
+
+<span class="pc bpc" id="L570" title="1 of 2 branches missed.">    if (attackee == null) {</span>
+<span class="nc" id="L571">      throw new RuntimeException(&quot;attackee is not found&quot;);</span>
+    }
+
+<span class="fc" id="L574">    Piece.Color attackeeColor = attackee.getColor();</span>
+
+    // Find all the pieces that could attack the subject piece
+<span class="fc bfc" id="L577" title="All 2 branches covered.">    for (int i = 0; i &lt; Board.BOARD_WIDTH; i++) {</span>
+<span class="fc bfc" id="L578" title="All 2 branches covered.">      for (int j = 0; j &lt; Board.BOARD_WIDTH; j++) {</span>
+<span class="fc" id="L579">        Piece p = board.getTile(i, j).getCurrentPiece();</span>
+<span class="fc bfc" id="L580" title="All 4 branches covered.">        if (p != null &amp;&amp; p.getColor() != attackeeColor) {</span>
+<span class="fc" id="L581">          attackerPieces.add(p);</span>
+        }
+      }
+    }
+
+    // Check if any of the attacker's pieces could reach the subject piece
+<span class="fc" id="L587">    Set&lt;Piece&gt; threats = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L588" title="All 2 branches covered.">    for (Piece piece : attackerPieces) {</span>
+<span class="fc bfc" id="L589" title="All 2 branches covered.">      Set&lt;Tile&gt; moves = piece instanceof Pawn</span>
+<span class="fc" id="L590">        ? ((Pawn) piece).getAttackRange(board)</span>
+<span class="fc" id="L591">        : piece.getPossibleTargets();</span>
+<span class="fc bfc" id="L592" title="All 2 branches covered.">      if (moves.contains(attackee.getCurrentTile())) {</span>
+<span class="fc" id="L593">        threats.add(piece);</span>
+      }
+<span class="fc" id="L595">    }</span>
+
+<span class="fc" id="L597">    return threats;</span>
+  }
+
+  /**
+   * Generates all possible legal moves for a given player.
+   *
+   * @param agent the player for which to generate moves
+   * @return a set of all possible legal moves
+   */
+  public Set&lt;Movement&gt; getAllLegalMovements(PlayerAgent agent) {
+<span class="fc" id="L607">    Set&lt;Movement&gt; allLegalMovements = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L608" title="All 2 branches covered.">    for (Piece p : agent.getPieces()) {</span>
+<span class="fc" id="L609">      Set&lt;Tile&gt; targets = p.getPossibleTargets();</span>
+<span class="fc bfc" id="L610" title="All 2 branches covered.">      for (Tile t : targets) {</span>
+<span class="fc" id="L611">        allLegalMovements.add(new Movement(p, t));</span>
+<span class="fc" id="L612">      }</span>
+<span class="fc bfc" id="L613" title="All 2 branches covered.">      if (p instanceof King) {</span>
+<span class="fc" id="L614">        allLegalMovements.addAll(</span>
+<span class="fc" id="L615">          ((King) p).getPotentialCastlingMovements(this)</span>
+        );
+      }
+<span class="fc" id="L618">    }</span>
+<span class="fc" id="L619">    return allLegalMovements;</span>
+  }
+
+  /**
+   * Solves a given InCheckIncident by finding all moves that would remove the king from check.
+   *
+   * @param inc the InCheckIncident to solve
+   * @return a set of all moves that would remove the king from check
+   */
+  public Set&lt;Movement&gt; solveIncident(InCheckIncident inc) {
+<span class="fc" id="L629">    Set&lt;Movement&gt; solutions = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L630">    King k = inc.getThreatenedKing();</span>
+<span class="fc" id="L631">    Set&lt;Movement&gt; allLegalMovements = getAllLegalMovements(</span>
+<span class="fc" id="L632">      board.getAgentByColor(k.getColor())</span>
+    );
+
+<span class="fc bfc" id="L635" title="All 2 branches covered.">    for (Movement move : allLegalMovements) {</span>
+<span class="fc" id="L636">      Set&lt;Piece&gt; threats = predictThreats(</span>
+<span class="fc" id="L637">        board.getPieceOwner(k).getOpponent(),</span>
+        move,
+        k
+      );
+<span class="fc bfc" id="L641" title="All 2 branches covered.">      if (threats.size() == 0) {</span>
+<span class="fc" id="L642">        solutions.add(move);</span>
+      }
+<span class="fc" id="L644">    }</span>
+<span class="fc" id="L645">    return solutions;</span>
+  }
+
+  /**
+   * Detects if a player's king is in check.
+   *
+   * @param agent the player to check
+   * @return an InCheckIncident if the king is in check, or null if not
+   */
+  public InCheckIncident detectInCheck(PlayerAgent agent) {
+<span class="fc" id="L655">    Set&lt;Piece&gt; threats = detectThreats(getBoard(), agent.getKing());</span>
+<span class="fc bfc" id="L656" title="All 2 branches covered.">    if (threats.size() &gt; 0) {</span>
+<span class="fc" id="L657">      return new InCheckIncident(agent.getKing());</span>
+    }
+<span class="fc" id="L659">    return null;</span>
+  }
+
+  /**
+   * Predicts if a player's king would be in check after a given move.
+   *
+   * @param agent the player to check
+   * @param m     the move to consider
+   * @return an InCheckIncident if the king would be in check after the move, or null if not
+   */
+  public InCheckIncident predictInCheck(PlayerAgent agent, Movement m) {
+<span class="fc" id="L670">    Set&lt;Piece&gt; threats = predictThreats(agent, m, agent.getKing());</span>
+<span class="fc bfc" id="L671" title="All 2 branches covered.">    if (threats.size() &gt; 0) {</span>
+<span class="fc" id="L672">      return new InCheckIncident(agent.getKing());</span>
+    }
+<span class="fc" id="L674">    return null;</span>
+  }
+
+  /**
+   * Checks if the game is ended.
+   *
+   * @return true if the game is ended, false otherwise
+   */
+  @Override
+  public boolean isEnded() {
+<span class="pc bpc" id="L684" title="2 of 4 branches missed.">    return humanAgent.isEnded() || botAgent.isEnded();</span>
+  }
+
+  /**
+   * Checks if the game is ended.
+   *
+   * @return true if the game is ended, false otherwise
+   */
+
+  /**
+   * Get all movements that don't impose a threat to the king
+   *
+   * @return all movements that don't impose a threat to the king
+   */
+  public Set&lt;Movement&gt; getSafeMovements(Set&lt;Movement&gt; allMovements) {
+<span class="pc bpc" id="L699" title="1 of 2 branches missed.">    if (allMovements == null) return null;</span>
+<span class="fc" id="L700">    Set&lt;Movement&gt; safeMovements = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L701" title="All 2 branches covered.">    for (Movement move : allMovements) {</span>
+<span class="fc" id="L702">      if (</span>
+<span class="fc bfc" id="L703" title="All 2 branches covered.">        predictInCheck(board.getPieceOwner(move.getSourcePiece()), move) == null</span>
+<span class="fc" id="L704">      ) safeMovements.add(move);</span>
+<span class="fc" id="L705">    }</span>
+<span class="fc" id="L706">    return safeMovements;</span>
+  }
+
+  // Game status enumeration
+<span class="fc" id="L710">  public enum GameStatus {</span>
+<span class="fc" id="L711">    ENDED,</span>
+<span class="fc" id="L712">    RENDERING_ANIMATION,</span>
+<span class="fc" id="L713">    PLAYER_TURN,</span>
+<span class="fc" id="L714">    COMPUTER_TURN,</span>
+<span class="fc" id="L715">    RENDERING_WARNING,</span>
+  }
+
+  /**
+   * Retrieves the castling movement based on the given movement.
+   *
+   * @param m the original movement
+   * @return the castling movement if valid, or null if not applicable
+   */
+  public Movement getCastlingMovement(Movement m) {
+    // Castling
+<span class="fc" id="L726">    if (</span>
+<span class="fc bfc" id="L727" title="All 2 branches covered.">      m.getSourcePiece() instanceof King &amp;&amp;</span>
+<span class="pc bpc" id="L728" title="1 of 2 branches missed.">      !m.getSourcePiece().getHasMovedBefore() &amp;&amp;</span>
+<span class="pc bpc" id="L729" title="1 of 2 branches missed.">      m.getTargetPiece() == null &amp;&amp;</span>
+<span class="pc bpc" id="L730" title="1 of 2 branches missed.">      Math.abs(m.getTargetX() - m.getSourceX()) == 2 &amp;&amp;</span>
+<span class="fc bfc" id="L731" title="All 2 branches covered.">      getInCheck() == null</span>
+    ) {
+<span class="fc bfc" id="L733" title="All 2 branches covered.">      int unitDirection = m.getTargetX() - m.getSourceX() &gt; 0 ? 1 : -1;</span>
+<span class="fc" id="L734">      int curX = m.getSourceX();</span>
+<span class="fc" id="L735">      Rook r = null;</span>
+
+<span class="fc bfc" id="L737" title="All 4 branches covered.">      while (curX &gt;= 0 &amp;&amp; curX &lt; Board.BOARD_WIDTH) {</span>
+<span class="fc" id="L738">        Piece p = board.getPiece(curX, m.getSourceY());</span>
+<span class="pc bpc" id="L739" title="1 of 4 branches missed.">        if (p instanceof Rook &amp;&amp; !p.getHasMovedBefore()) {</span>
+<span class="fc" id="L740">          r = (Rook) p;</span>
+        }
+<span class="fc" id="L742">        curX += unitDirection;</span>
+<span class="fc" id="L743">      }</span>
+
+<span class="fc bfc" id="L745" title="All 2 branches covered.">      if (r != null) {</span>
+<span class="fc" id="L746">        return new Movement(</span>
+          r,
+<span class="fc" id="L748">          board.getTile(m.getTargetX() - unitDirection, m.getSourceY())</span>
+        );
+      }
+    }
+
+<span class="fc" id="L753">    return null;</span>
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.8.202204050719</span></div></body></html>
