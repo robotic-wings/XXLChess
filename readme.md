@@ -1,5 +1,7 @@
 # XXLChess: A Variant Chess Game
 
+![Preview image](preview.png)
+
 ## Overview
 
 Welcome to XXLChess! This is not your typical chess game; it's an XXL version that takes the classic game to new heights. Developed in Java and utilizing the Processing library for graphics, this game features a 14x14 board. The game is managed through Gradle, making dependency management a breeze.
