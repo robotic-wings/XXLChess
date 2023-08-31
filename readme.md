@@ -9,5 +9,3 @@ To compile and run this game, please run the following command:
 and then run the following command:
 
 `gradle run`
-
-Cheers!
